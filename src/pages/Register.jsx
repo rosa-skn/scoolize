@@ -41,7 +41,6 @@ export default function Register() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Header */}
       <header className="border-b border-gray-300 py-4 px-6">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -54,7 +53,6 @@ export default function Register() {
         </div>
       </header>
 
-      {/* Main Content */}
       <div className="max-w-3xl mx-auto px-6 py-12">
     
 
@@ -68,7 +66,6 @@ export default function Register() {
           </p>
 
           <form onSubmit={handleRegister} className="space-y-6">
-            {/* Email Field */}
             <div>
               <label className="block text-sm font-semibold text-black mb-2">
                 Votre adresse email personnelle
@@ -89,7 +86,6 @@ export default function Register() {
               />
             </div>
 
-            {/* Password Field */}
             <div>
               <label className="block text-sm font-semibold text-black mb-2">
                 Créer un mot de passe
@@ -107,7 +103,6 @@ export default function Register() {
               />
             </div>
 
-            {/* Confirm Password Field */}
             <div>
               <label className="block text-sm font-semibold text-black mb-2">
                 Confirmer le mot de passe
@@ -122,7 +117,7 @@ export default function Register() {
               />
             </div>
 
-            {/* Show Password Checkbox */}
+
             <div className="flex items-center">
               <input
                 type="checkbox"
@@ -136,7 +131,6 @@ export default function Register() {
               </label>
             </div>
 
-            {/* Submit Button */}
             <button
               type="submit"
               disabled={loading}
@@ -156,7 +150,6 @@ export default function Register() {
             </Link>
           </div>
 
-          {/* Info Box */}
           <div className="mt-8 bg-blue-50 border border-blue-200 rounded p-6">
             <p className="text-sm text-gray-700 mb-4">
               <strong>💡 Conseils pour votre mot de passe :</strong>

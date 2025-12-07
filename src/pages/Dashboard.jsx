@@ -9,24 +9,19 @@ export default function Dashboard() {
   const nav = useNavigate();
   const [user, setUser] = useState(null);
 
-  // Parcoursup data
   const [allData, setAllData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Search states
   const [searchFormation, setSearchFormation] = useState("");
   const [searchZone, setSearchZone] = useState("");
 
-  // Filter states
   const [selectedTypes, setSelectedTypes] = useState([]);
   const [sortBy, setSortBy] = useState("pertinence");
 
-  // Accordion states
   const [typeOpen, setTypeOpen] = useState(true);
   const [apprentissageOpen, setApprentissageOpen] = useState(false);
 
-  // For filters
   const [types, setTypes] = useState([]);
   const [typeCounts, setTypeCounts] = useState({});
 
@@ -49,7 +44,6 @@ export default function Dashboard() {
     setAllData(records);
     setFilteredData(records);
 
-    // Count types
     const typeMap = {};
     records.forEach((r) => {
       const t = r.fields.contrat_etab || "Non spécifié";
@@ -68,14 +62,12 @@ export default function Dashboard() {
   const applyFilters = () => {
     let filtered = [...allData];
 
-    // Search formation
     if (searchFormation.trim()) {
       filtered = filtered.filter((item) =>
         item.fields.lib_for_voe_ins?.toLowerCase().includes(searchFormation.toLowerCase())
       );
     }
 
-    // Search zone
     if (searchZone.trim()) {
       filtered = filtered.filter(
         (item) =>
@@ -84,14 +76,12 @@ export default function Dashboard() {
       );
     }
 
-    // Type filter
     if (selectedTypes.length > 0) {
       filtered = filtered.filter((item) => 
         selectedTypes.includes(item.fields.contrat_etab)
       );
     }
 
-    // Sort
     if (sortBy === "alphabetical") {
       filtered.sort((a, b) =>
         (a.fields.lib_for_voe_ins || "").localeCompare(b.fields.lib_for_voe_ins || "")
@@ -126,7 +116,6 @@ export default function Dashboard() {
   }
 return (
   <div className="min-h-screen bg-white flex flex-col">
-    {/* Top header */}
     <header className="border-b border-gray-300 py-4 px-6">
       <div className="max-w-screen-2xl mx-auto flex justify-between items-center">
         <h1 className="text-2xl font-bold text-black">Parcoursup</h1>
@@ -142,7 +131,6 @@ return (
       </div>
     </header>
 
-    {/* Search section */}
     <div className="py-10 px-6 bg-purple-50 ml-5 mr-5 mt-5">
       <div className="max-w-screen-2xl mx-auto">
         <h2 className="text-xl font-bold text-black mb-8 text-center">
@@ -150,7 +138,6 @@ return (
         </h2>
 
         <div className="flex gap-6 justify-center">
-          {/* Left search */}
           <div className="flex-1 max-w-lg">
             <label className="text-sm text-gray-700 font-medium mb-1 flex items-center">
               Rechercher une formation, une filière...
@@ -166,7 +153,6 @@ return (
             />
           </div>
 
-          {/* Zone search */}
           <div className="flex-1 max-w-lg">
             <label className="text-sm text-gray-700 font-medium mb-1 flex items-center">
               Zone géographique
@@ -182,7 +168,6 @@ return (
             />
           </div>
 
-          {/* Search button */}
           <button
             onClick={applyFilters}
             className="self-end px-6 py-3 bg-blue-900 text-white rounded hover:bg-blue-800 flex items-center gap-2"
@@ -194,13 +179,10 @@ return (
       </div>
     </div>
 
-    {/* Whole content */}
     <div className="flex flex-1 max-w-screen-2xl mx-auto w-full mt-6">
-      {/* Filters left */}
       <aside className="w-64 border-r border-gray-200 p-4">
         <h3 className="text-xl font-bold mb-4">Filtres</h3>
 
-        {/* Type filter */}
         <div className="mb-6">
           <button
             onClick={() => setTypeOpen(!typeOpen)}
@@ -236,7 +218,6 @@ return (
           )}
         </div>
 
-        {/* Apprentissage */}
         <div className="mb-6">
           <button
             onClick={() => setApprentissageOpen(!apprentissageOpen)}
@@ -261,7 +242,6 @@ return (
         </div>
       </aside>
 
-      {/* Middle results */}
       <main className="flex-1 px-6">
         <div className="flex justify-between items-center mb-4">
           <p className="text-gray-700 text-sm">
@@ -288,7 +268,6 @@ return (
         </div>
       </main>
 
-      {/* Right MAP */}
       <aside className="w-[480px] sticky top-4 h-[85vh] border border-gray-300 rounded-lg overflow-hidden ml-6">
         <Map formations={filteredData} />
       </aside>
@@ -302,7 +281,6 @@ const FormationCard = ({ data }) => {
 
   return (
     <div className="border border-gray-300 hover:border-blue-900 p-5 bg-white">
-      {/* Badge */}
      <span
   className="text-xs font-bold px-3 py-1 rounded-lg"
   style={{
@@ -314,7 +292,6 @@ const FormationCard = ({ data }) => {
 </span>
 
 
-      {/* Title */}
       <h3 className="text-lg font-bold text-gray-900 mt-3">
         {f.lib_for_voe_ins}
       </h3>

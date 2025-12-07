@@ -28,11 +28,9 @@ export default function Login() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Header */}
       <header className="border-b border-gray-300 py-4 px-6">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
-            {/* Parcoursup Logo */}
             <div>
               <h1 className="text-2xl font-bold text-[#5C2D91]">Parcoursup</h1>
               <p className="text-xs text-gray-600">La plateforme d'admission dans le supérieur</p>
@@ -41,7 +39,6 @@ export default function Login() {
         </div>
       </header>
 
-      {/* Main Content */}
       <div className="max-w-3xl mx-auto px-6 py-12">
         <div className="max-w-2xl">
           <h2 className="text-3xl font-bold text-black mb-4">
@@ -53,7 +50,6 @@ export default function Login() {
           </p>
 
           <form onSubmit={handleLogin} className="space-y-6">
-            {/* Email Field */}
             <div>
               <label className="block text-sm font-semibold text-black mb-2">
                 Votre adresse email
@@ -70,7 +66,6 @@ export default function Login() {
               />
             </div>
 
-            {/* Password Field */}
             <div>
               <label className="block text-sm font-semibold text-black mb-2">
                 Votre mot de passe
@@ -84,7 +79,6 @@ export default function Login() {
               />
             </div>
 
-            {/* Show Password Checkbox */}
             <div className="flex items-center">
               <input
                 type="checkbox"
@@ -98,7 +92,6 @@ export default function Login() {
               </label>
             </div>
 
-            {/* Forgot Password Link */}
             <div>
               <button
                 type="button"
@@ -108,7 +101,6 @@ export default function Login() {
               </button>
             </div>
 
-            {/* Submit Button */}
             <button
               type="submit"
               disabled={loading}
@@ -118,7 +110,6 @@ export default function Login() {
             </button>
           </form>
 
-          {/* Register Link */}
           <div className="mt-8 pt-6 border-t border-gray-300">
             <Link
               to="/register"
@@ -128,7 +119,6 @@ export default function Login() {
             </Link>
           </div>
 
-          {/* Info Box */}
           <div className="mt-8 bg-gray-50 border border-gray-300 rounded p-6">
             <p className="text-sm text-gray-700 mb-4">
               <strong>Important</strong>, pour créer un compte sur Parcoursup, vous devez

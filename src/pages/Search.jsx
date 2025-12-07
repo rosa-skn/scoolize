@@ -7,19 +7,15 @@ export default function ParcoursupSearch() {
   const [filteredData, setFilteredData] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Search states
   const [searchFormation, setSearchFormation] = useState("");
   const [searchZone, setSearchZone] = useState("");
 
-  // Filter states
   const [selectedType, setSelectedType] = useState("");
   const [sortBy, setSortBy] = useState("pertinence");
 
-  // Accordion states
   const [typeOpen, setTypeOpen] = useState(true);
   const [apprentissageOpen, setApprentissageOpen] = useState(false);
 
-  // For filters
   const [types, setTypes] = useState([]);
   const [typeCounts, setTypeCounts] = useState({});
 
@@ -33,7 +29,6 @@ export default function ParcoursupSearch() {
     setAllData(records);
     setFilteredData(records);
 
-    // Count types
     const typeMap = {};
     records.forEach((r) => {
       const type = r.fields.type_etablissement || r.fields.contrat_etab || "Autre";
@@ -83,7 +78,6 @@ export default function ParcoursupSearch() {
       );
     }
 
-    // Sort
     if (sortBy === "alphabetique") {
       filtered.sort((a, b) =>
         (a.fields.etablissement || "").localeCompare(b.fields.etablissement || "")
@@ -109,16 +103,13 @@ export default function ParcoursupSearch() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <div className="bg-white border-b shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-8">
             Rechercher une formation
           </h1>
 
-          {/* Search Inputs */}
           <div className="flex flex-col md:flex-row gap-4 mb-4">
-            {/* Formation Search */}
             <div className="flex-1">
               <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
                 Rechercher une formation, une filière...
@@ -133,7 +124,6 @@ export default function ParcoursupSearch() {
               />
             </div>
 
-            {/* Zone Search */}
             <div className="flex-1">
               <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
                 Zone géographique
@@ -148,7 +138,6 @@ export default function ParcoursupSearch() {
               />
             </div>
 
-            {/* Search Button */}
             <div className="flex items-end">
               <button 
                 onClick={filterData}
@@ -162,15 +151,12 @@ export default function ParcoursupSearch() {
         </div>
       </div>
 
-      {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 py-6">
         <div className="flex flex-col lg:flex-row gap-6">
-          {/* Sidebar - Filters */}
           <aside className="lg:w-64 flex-shrink-0">
             <div className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm sticky top-4">
               <h2 className="text-lg font-bold mb-4">Filtres</h2>
 
-              {/* Types d'établissement */}
               <div className="border-b pb-4 mb-4">
                 <button
                   onClick={() => setTypeOpen(!typeOpen)}
@@ -209,7 +195,6 @@ export default function ParcoursupSearch() {
                 )}
               </div>
 
-              {/* Apprentissage */}
               <div className="pb-4">
                 <button
                   onClick={() => setApprentissageOpen(!apprentissageOpen)}
@@ -247,7 +232,6 @@ export default function ParcoursupSearch() {
                 )}
               </div>
 
-              {/* Reset Button */}
               <button
                 onClick={resetFilters}
                 className="w-full mt-4 px-4 py-2 text-sm text-blue-900 border border-blue-900 rounded-md hover:bg-blue-50 transition"
@@ -257,9 +241,7 @@ export default function ParcoursupSearch() {
             </div>
           </aside>
 
-          {/* Main Content - Results */}
           <main className="flex-1">
-            {/* Results Header */}
             <div className="bg-white rounded-lg border border-gray-200 p-4 mb-4 shadow-sm">
               <div className="flex items-center justify-between flex-wrap gap-4">
                 <p className="text-sm text-gray-600">
@@ -285,7 +267,6 @@ export default function ParcoursupSearch() {
               </div>
             </div>
 
-            {/* Results List */}
             {loading ? (
               <div className="bg-white rounded-lg border border-gray-200 p-12 text-center shadow-sm">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-900 mx-auto mb-4"></div>
@@ -392,7 +373,6 @@ const FormationCard = ({ record }) => {
         </div>
       </div>
 
-      {/* Similar Formations */}
       <div className="border-t border-gray-200">
         <button
           onClick={() => setShowSimilar(!showSimilar)}

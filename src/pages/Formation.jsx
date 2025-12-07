@@ -1,4 +1,3 @@
-// src/components/FormationDetail.jsx
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { supabase } from "../supabase";
@@ -85,7 +84,6 @@ export default function Formation() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Header */}
       <header className="border-b border-gray-300 py-4 px-6">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <h1 className="text-2xl font-bold text-black">Parcoursup</h1>
@@ -101,7 +99,6 @@ export default function Formation() {
         </div>
       </header>
 
-      {/* Breadcrumb */}
       <div className="border-b border-gray-300 py-3 px-6 bg-gray-50">
         <div className="max-w-7xl mx-auto flex items-center gap-2 text-sm">
           <Link
@@ -117,12 +114,9 @@ export default function Formation() {
         </div>
       </div>
 
-      {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="flex gap-8">
-          {/* Left Column - Main Info */}
           <div className="flex-1">
-            {/* Back Button */}
             <button
               onClick={() => navigate("/dashboard")}
               className="flex items-center gap-2 text-sm text-blue-600 underline hover:no-underline mb-6"
@@ -131,7 +125,6 @@ export default function Formation() {
               Retour à la recherche
             </button>
 
-            {/* Formation Title */}
             <div className="mb-8">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
@@ -147,7 +140,6 @@ export default function Formation() {
                 </button>
               </div>
 
-              {/* Location */}
               <div className="flex items-center gap-2 text-gray-700 mb-4">
                 <MapPin className="w-5 h-5" />
                 <span>
@@ -156,7 +148,6 @@ export default function Formation() {
               </div>
             </div>
 
-            {/* Quick Info Cards */}
             <div className="p-6 mb-8 bg-purple-50">
               <h2 className="text-xl font-bold text-gray mb-4">ÉTABLISSEMENT</h2>
               <div className="mb-4">
@@ -193,14 +184,12 @@ export default function Formation() {
               </div>
             </div>
 
-            {/* Statistics Section */}
             <div className="border border-gray-300 rounded p-6 mb-8">
               <h2 className="text-2xl font-bold text-black mb-6">
                 Comprendre les critères d'analyse des candidatures
               </h2>
 
               <div className="grid grid-cols-2 gap-6">
-                {/* Candidates */}
                 <div className="border-l-4 border-blue-600 pl-4">
                   <div className="flex items-center gap-2 mb-2">
                     <Users className="w-5 h-5 text-blue-600" />
@@ -212,7 +201,6 @@ export default function Formation() {
                   <p className="text-sm text-gray-600">Vœux confirmés</p>
                 </div>
 
-                {/* Places */}
                 <div className="border-l-4 border-blue-600 pl-4">
                   <div className="flex items-center gap-2 mb-2">
                     <School className="w-5 h-5 text-blue-600" />
@@ -224,7 +212,6 @@ export default function Formation() {
                   <p className="text-sm text-gray-600">Capacité d'accueil</p>
                 </div>
 
-                {/* Admission Rate */}
                 {f.taux_acces_ens && (
                   <div className="border-l-4 border-blue-600 pl-4">
                     <div className="flex items-center gap-2 mb-2">
@@ -238,7 +225,6 @@ export default function Formation() {
                   </div>
                 )}
 
-                {/* Propositions */}
                 {f.prop_tot && (
                   <div className="border-l-4 border-blue-600 pl-4">
                     <div className="flex items-center gap-2 mb-2">
@@ -254,7 +240,6 @@ export default function Formation() {
               </div>
             </div>
 
-            {/* Presentation */}
             <div className="border border-gray-300 rounded p-6 mb-8">
               <h2 className="text-2xl font-bold text-black mb-4">
                 Présentation de la formation
@@ -284,7 +269,6 @@ export default function Formation() {
               </div>
             </div>
 
-            {/* Contact Section */}
             <div className="border border-gray-300 rounded p-6">
               <h2 className="text-2xl font-bold text-black mb-4">
                 Contacter et échanger avec l'établissement
@@ -314,7 +298,6 @@ export default function Formation() {
             </div>
           </div>
 
-          {/* Right Column - Card */}
           <div className="w-80">
 <div className="sticky top-6 0 rounded p-6 bg-[#7B7BCC]">             
  <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">

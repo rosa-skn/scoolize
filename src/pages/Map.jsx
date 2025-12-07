@@ -1,5 +1,3 @@
-// src/pages/Map.jsx
-
 import { useEffect, useState } from "react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
@@ -25,7 +23,6 @@ export default function Map() {
     async function load() {
       const records = await fetchParcoursupData();
 
-      // === FILTER FOR UNIVERSITÉS + BUT + BTS ===
       const extracted = records
         .filter((r) => {
           const f = r.fields;
