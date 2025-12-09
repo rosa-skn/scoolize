@@ -19,6 +19,8 @@ export default function Formation() {
   const [formation, setFormation] = useState(null);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [applying, setApplying] = useState(false);
+  const [appliedSuccess, setAppliedSuccess] = useState(false);
 
   useEffect(() => {
     async function loadUser() {
@@ -51,6 +53,49 @@ export default function Formation() {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate("/");
+  };
+
+  const handleApplyToFormation = async () => {
+    if (!user || !formation) return;
+
+    try {
+      setApplying(true);
+      const f = formation.fields;
+
+      // Check if candidature already exists
+      const { data: existingCandidature, error: checkCandidError } = await supabase
+        .from('candidatures')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('formation_id', id)
+        .maybeSingle();
+
+      if (existingCandidature) {
+        alert('Vous avez déjà postulé à cette formation');
+        setApplying(false);
+        return;
+      }
+
+      // Now insert the candidature
+      const { error: candidatureError } = await supabase
+        .from('candidatures')
+        .insert({
+          user_id: user.id,
+          formation_id: id,
+          statut: 'en_attente'
+        });
+
+      if (candidatureError) throw candidatureError;
+
+      setAppliedSuccess(true);
+      setTimeout(() => setAppliedSuccess(false), 3000);
+      alert('Formation ajoutée à vos candidatures!');
+    } catch (error) {
+      console.error('Erreur lors de la candidature:', error);
+      alert('Erreur: ' + (error.message || 'Impossible d\'ajouter cette formation'));
+    } finally {
+      setApplying(false);
+    }
   };
 
   if (loading) {
@@ -135,9 +180,22 @@ export default function Formation() {
                     {f.lib_comp_etab || "Établissement"}
                   </p>
                 </div>
-                <button className="p-2 hover:bg-gray-100 rounded-full">
-                  <Heart className="w-6 h-6 text-gray-600" />
-                </button>
+                <div className="flex gap-2">
+                  <button className="p-2 hover:bg-gray-100 rounded-full">
+                    <Heart className="w-6 h-6 text-gray-600" />
+                  </button>
+                  <button
+                    onClick={handleApplyToFormation}
+                    disabled={applying || appliedSuccess}
+                    className={`px-6 py-2 rounded font-semibold transition ${
+                      appliedSuccess
+                        ? 'bg-green-600 text-white'
+                        : 'bg-[#5C2D91] text-white hover:bg-[#4A2373] disabled:bg-gray-400'
+                    }`}
+                  >
+                    {applying ? 'Ajout...' : appliedSuccess ? 'Ajoutée' : 'Ajouter'}
+                  </button>
+                </div>
               </div>
 
               <div className="flex items-center gap-2 text-gray-700 mb-4">
@@ -149,14 +207,14 @@ export default function Formation() {
             </div>
 
             <div className="p-6 mb-8 bg-purple-50">
-              <h2 className="text-xl font-bold text-gray mb-4">ÉTABLISSEMENT</h2>
+              <h2 className="text-xl font-bold text-gray mb-4">Établissement</h2>
               <div className="mb-4">
                 <span className="inline-block px-4 py-2 bg-purple-200 text-purple-800 rounded text-sm font-semibold">
                   {f.contrat_etab || "ÉTABLISSEMENT PUBLIC"}
                 </span>
               </div>
 
-              <h2 className="text-xl font-bold text-gray-00 mb-4 mt-6">FORMATION</h2>
+              <h2 className="text-xl font-bold text-gray-00 mb-4 mt-6">Formation</h2>
               <div className="space-y-3">
                 <div className="flex gap-3">
                   <span className="inline-block px-4 py-2 bg-purple-200 text-purple-800 rounded text-sm">
@@ -171,7 +229,7 @@ export default function Formation() {
                 
                 {f.voe_tot && (
                   <span className="inline-block px-4 py-2 bg-purple-200 text-purple-800 rounded text-sm">
-                    {f.voe_tot} VŒUX CONFIRMÉS EN 2025
+                    {f.voe_tot} VOEUX CONFIRMÉS EN 2025
                   </span>
                 )}
 
@@ -198,7 +256,7 @@ export default function Formation() {
                   <p className="text-3xl font-bold text-black">
                     {f.voe_tot || "N/A"}
                   </p>
-                  <p className="text-sm text-gray-600">Vœux confirmés</p>
+                  <p className="text-sm text-gray-600">Voeux confirmés</p>
                 </div>
 
                 <div className="border-l-4 border-blue-600 pl-4">

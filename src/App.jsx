@@ -5,7 +5,8 @@ import Dashboard from "./pages/Dashboard";
 import UniversityPage from "./pages/UniversityPage";
 import Search from "./pages/Search";
 import Formation from "./pages/Formation";
-
+import Profil from "./pages/Profil";
+import FormationDetail from "./components/FormationDetails"; 
 function App() {
   return (
     <BrowserRouter>
@@ -18,6 +19,8 @@ function App() {
         <Route path="/university/:name" element={<UniversityPage />} />
         <Route path="/search" element={<Search />} />
         <Route path="/formation/:id" element={<Formation />} />
+        <Route path="/profil" element={<Profil />} />
+        <Route path="/formation/:id" element={<FormationDetail />} />
       </Routes>
     </BrowserRouter>
   );

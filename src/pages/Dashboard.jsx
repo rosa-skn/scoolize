@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "../supabase";
 import Map from "./Map";
 import { fetchParcoursupData } from "../services/parcoursupAPI";
-import { Search, HelpCircle, Heart, Plus, Minus } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Search, HelpCircle, Heart, Plus, Minus, User } from "lucide-react";
+
 export default function Dashboard() {
   const nav = useNavigate();
   const [user, setUser] = useState(null);
@@ -121,6 +121,13 @@ return (
         <h1 className="text-2xl font-bold text-black">Parcoursup</h1>
         <div className="flex items-center gap-4">
           <span className="text-sm text-gray-700">{user?.email}</span>
+          <Link
+            to="/profil"
+            className="px-4 py-2 bg-[#5C2D91] text-white rounded text-sm hover:bg-[#4A2373] flex items-center gap-2"
+          >
+            <User className="w-4 h-4" />
+            Mon Profil
+          </Link>
           <button
             onClick={handleLogout}
             className="px-4 py-2 border border-gray-300 rounded text-sm hover:bg-gray-100"
@@ -188,7 +195,7 @@ return (
             onClick={() => setTypeOpen(!typeOpen)}
             className="flex justify-between w-full text-left font-semibold text-gray-800"
           >
-            Types d’établissement
+            Types d'établissement
             {typeOpen ? <Minus /> : <Plus />}
           </button>
 
@@ -280,7 +287,7 @@ const FormationCard = ({ data }) => {
   const f = data.fields;
 
   return (
-    <div className="border border-gray-300 hover:border-blue-900 p-5 bg-white">
+    <div className="border border-b-blue-900 border-gray-300 hover:border-blue-900 p-5 bg-white">
      <span
   className="text-xs font-bold px-3 py-1 rounded-lg"
   style={{
@@ -290,7 +297,6 @@ const FormationCard = ({ data }) => {
 >
   {f.contrat_etab || "PUBLIC"}
 </span>
-
 
       <h3 className="text-lg font-bold text-gray-900 mt-3">
         {f.lib_for_voe_ins}
