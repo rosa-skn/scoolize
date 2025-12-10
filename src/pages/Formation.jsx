@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { supabase } from "../supabase";
-import { 
-  ArrowLeft, 
-  Heart, 
-  MapPin, 
-  Users, 
-  TrendingUp, 
+import {
+  ArrowLeft,
+  Heart,
+  MapPin,
+  Users,
+  TrendingUp,
   School,
   Mail,
   ExternalLink,
@@ -21,6 +21,8 @@ export default function Formation() {
   const [loading, setLoading] = useState(true);
   const [applying, setApplying] = useState(false);
   const [appliedSuccess, setAppliedSuccess] = useState(false);
+  const [processing, setProcessing] = useState(false);
+  const etudiantId = user?.id;
 
   useEffect(() => {
     async function loadUser() {
@@ -55,46 +57,44 @@ export default function Formation() {
     navigate("/");
   };
 
-  const handleApplyToFormation = async () => {
-    if (!user || !formation) return;
-
+  const handleApplyToFormation = async (id) => {
     try {
-      setApplying(true);
-      const f = formation.fields;
-
-      // Check if candidature already exists
-      const { data: existingCandidature, error: checkCandidError } = await supabase
-        .from('candidatures')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('formation_id', id)
+      setProcessing(true);
+      const { data: existingApp, error: checkError } = await supabase
+        .from("candidatures")
+        .select("id")
+        .eq("etudiant_id", etudiantId)
+        .eq("formation_id", id)
         .maybeSingle();
 
-      if (existingCandidature) {
-        alert('Vous avez déjà postulé à cette formation');
-        setApplying(false);
+      if (checkError) {
+        throw checkError;
+      }
+
+      if (existingApp) {
+        alert("Vous avez déjà postulé à cette formation");
+        setProcessing(false);
         return;
       }
 
-      // Now insert the candidature
-      const { error: candidatureError } = await supabase
-        .from('candidatures')
+      const { data, error: insertError } = await supabase
+        .from("candidatures")
         .insert({
-          user_id: user.id,
+          etudiant_id: etudiantId,
           formation_id: id,
-          statut: 'en_attente'
-        });
+          statut: "en_attente"
+        })
+        .select()
+        .single();
 
-      if (candidatureError) throw candidatureError;
+      if (insertError) throw insertError;
 
-      setAppliedSuccess(true);
-      setTimeout(() => setAppliedSuccess(false), 3000);
-      alert('Formation ajoutée à vos candidatures!');
+      alert("Candidature envoyée avec succès!");
     } catch (error) {
-      console.error('Erreur lors de la candidature:', error);
-      alert('Erreur: ' + (error.message || 'Impossible d\'ajouter cette formation'));
+      console.error("Erreur lors de la candidature:", error);
+      alert("Erreur: " + (error.message || "Impossible de postuler"));
     } finally {
-      setApplying(false);
+      setProcessing(false);
     }
   };
 
@@ -114,10 +114,7 @@ export default function Formation() {
       <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="text-center">
           <p className="text-xl text-gray-700 mb-4">Formation non trouvée</p>
-          <Link
-            to="/dashboard"
-            className="text-blue-600 underline hover:no-underline"
-          >
+          <Link to="/dashboard" className="text-blue-600 underline hover:no-underline">
             Retour à la recherche
           </Link>
         </div>
@@ -146,16 +143,11 @@ export default function Formation() {
 
       <div className="border-b border-gray-300 py-3 px-6 bg-gray-50">
         <div className="max-w-7xl mx-auto flex items-center gap-2 text-sm">
-          <Link
-            to="/dashboard"
-            className="text-blue-600 underline hover:no-underline"
-          >
+          <Link to="/dashboard" className="text-blue-600 underline hover:no-underline">
             Rechercher une formation
           </Link>
           <span className="text-gray-600">&gt;</span>
-          <span className="text-black font-semibold">
-            {f.lib_for_voe_ins || "Formation"}
-          </span>
+          <span className="text-black font-semibold">{f.lib_for_voe_ins || "Formation"}</span>
         </div>
       </div>
 
@@ -173,27 +165,21 @@ export default function Formation() {
             <div className="mb-8">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
-                  <h1 className="text-3xl font-bold text-black mb-2">
-                    {f.lib_for_voe_ins || "Formation sans nom"}
-                  </h1>
-                  <p className="text-xl text-black mb-3">
-                    {f.lib_comp_etab || "Établissement"}
-                  </p>
+                  <h1 className="text-3xl font-bold text-black mb-2">{f.lib_for_voe_ins || "Formation sans nom"}</h1>
+                  <p className="text-xl text-black mb-3">{f.lib_comp_etab || "Établissement"}</p>
                 </div>
                 <div className="flex gap-2">
                   <button className="p-2 hover:bg-gray-100 rounded-full">
                     <Heart className="w-6 h-6 text-gray-600" />
                   </button>
                   <button
-                    onClick={handleApplyToFormation}
+                    onClick={() => handleApplyToFormation(formation.recordid)}
                     disabled={applying || appliedSuccess}
                     className={`px-6 py-2 rounded font-semibold transition ${
-                      appliedSuccess
-                        ? 'bg-green-600 text-white'
-                        : 'bg-[#5C2D91] text-white hover:bg-[#4A2373] disabled:bg-gray-400'
+                      appliedSuccess ? "bg-green-600 text-white" : "bg-[#5C2D91] text-white hover:bg-[#4A2373] disabled:bg-gray-400"
                     }`}
                   >
-                    {applying ? 'Ajout...' : appliedSuccess ? 'Ajoutée' : 'Ajouter'}
+                    {applying ? "Ajout..." : appliedSuccess ? "Ajoutée" : "Ajouter"}
                   </button>
                 </div>
               </div>
@@ -226,7 +212,7 @@ export default function Formation() {
                     </span>
                   )}
                 </div>
-                
+
                 {f.voe_tot && (
                   <span className="inline-block px-4 py-2 bg-purple-200 text-purple-800 rounded text-sm">
                     {f.voe_tot} VOEUX CONFIRMÉS EN 2025
@@ -243,9 +229,7 @@ export default function Formation() {
             </div>
 
             <div className="border border-gray-300 rounded p-6 mb-8">
-              <h2 className="text-2xl font-bold text-black mb-6">
-                Comprendre les critères d'analyse des candidatures
-              </h2>
+              <h2 className="text-2xl font-bold text-black mb-6">Comprendre les critères d'analyse des candidatures</h2>
 
               <div className="grid grid-cols-2 gap-6">
                 <div className="border-l-4 border-blue-600 pl-4">
@@ -253,9 +237,7 @@ export default function Formation() {
                     <Users className="w-5 h-5 text-blue-600" />
                     <h3 className="font-bold text-black">Candidats</h3>
                   </div>
-                  <p className="text-3xl font-bold text-black">
-                    {f.voe_tot || "N/A"}
-                  </p>
+                  <p className="text-3xl font-bold text-black">{f.voe_tot || "N/A"}</p>
                   <p className="text-sm text-gray-600">Voeux confirmés</p>
                 </div>
 
@@ -264,9 +246,7 @@ export default function Formation() {
                     <School className="w-5 h-5 text-blue-600" />
                     <h3 className="font-bold text-black">Places</h3>
                   </div>
-                  <p className="text-3xl font-bold text-black">
-                    {f.capa_fin || "N/A"}
-                  </p>
+                  <p className="text-3xl font-bold text-black">{f.capa_fin || "N/A"}</p>
                   <p className="text-sm text-gray-600">Capacité d'accueil</p>
                 </div>
 
@@ -276,9 +256,7 @@ export default function Formation() {
                       <TrendingUp className="w-5 h-5 text-blue-600" />
                       <h3 className="font-bold text-black">Taux d'accès</h3>
                     </div>
-                    <p className="text-3xl font-bold text-black">
-                      {Math.round(f.taux_acces_ens)}%
-                    </p>
+                    <p className="text-3xl font-bold text-black">{Math.round(f.taux_acces_ens)}%</p>
                     <p className="text-sm text-gray-600">Candidats admis</p>
                   </div>
                 )}
@@ -289,9 +267,7 @@ export default function Formation() {
                       <Mail className="w-5 h-5 text-blue-600" />
                       <h3 className="font-bold text-black">Propositions</h3>
                     </div>
-                    <p className="text-3xl font-bold text-black">
-                      {f.prop_tot}
-                    </p>
+                    <p className="text-3xl font-bold text-black">{f.prop_tot}</p>
                     <p className="text-sm text-gray-600">Propositions envoyées</p>
                   </div>
                 )}
@@ -299,10 +275,8 @@ export default function Formation() {
             </div>
 
             <div className="border border-gray-300 rounded p-6 mb-8">
-              <h2 className="text-2xl font-bold text-black mb-4">
-                Présentation de la formation
-              </h2>
-              
+              <h2 className="text-2xl font-bold text-black mb-4">Présentation de la formation</h2>
+
               <div className="prose max-w-none">
                 <p className="text-gray-700 mb-4">
                   Cette formation fait partie de la filière <strong>{f.fili || "Non spécifiée"}</strong>.
@@ -321,25 +295,17 @@ export default function Formation() {
                 )}
 
                 <p className="text-gray-600 italic">
-                  Pour plus d'informations détaillées sur le programme, les modalités d'admission 
-                  et les débouchés, veuillez consulter le site officiel de l'établissement.
+                  Pour plus d'informations détaillées sur le programme, les modalités d'admission et les débouchés, veuillez consulter le site officiel de l'établissement.
                 </p>
               </div>
             </div>
 
             <div className="border border-gray-300 rounded p-6">
-              <h2 className="text-2xl font-bold text-black mb-4">
-                Contacter et échanger avec l'établissement
-              </h2>
-              
+              <h2 className="text-2xl font-bold text-black mb-4">Contacter et échanger avec l'établissement</h2>
+
               <div className="space-y-4">
                 {f.url && (
-                  <a
-                    href={f.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-blue-600 underline hover:no-underline"
-                  >
+                  <a href={f.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-blue-600 underline hover:no-underline">
                     <ExternalLink className="w-4 h-4" />
                     Site web de l'établissement
                   </a>
@@ -357,8 +323,8 @@ export default function Formation() {
           </div>
 
           <div className="w-80">
-<div className="sticky top-6 0 rounded p-6 bg-[#7B7BCC]">             
- <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+            <div className="sticky top-6 rounded p-6 bg-[#7B7BCC]">
+              <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                 <Info className="w-5 h-5" />
                 Carte d'identité de la formation
               </h3>
@@ -376,9 +342,7 @@ export default function Formation() {
 
                 <div>
                   <p className="font-semibold text-gray-100 mb-1">Sélectivité</p>
-                  <p className="text-white">
-                    {f.select_form === "1" ? "Formation sélective" : "Formation ouverte"}
-                  </p>
+                  <p className="text-white">{f.select_form === "1" ? "Formation sélective" : "Formation ouverte"}</p>
                 </div>
 
                 {f.capa_fin && (
