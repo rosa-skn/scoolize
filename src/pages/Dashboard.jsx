@@ -3,9 +3,9 @@ import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "../supabase";
 import Map from "./Map";
 import { fetchParcoursupData } from "../services/parcoursupAPI";
-import { Search, HelpCircle, Heart, Plus, Minus, User } from "lucide-react";
+import { Search, HelpCircle, Heart, Plus, Minus, User, BarChart } from "lucide-react";
 
-export default function Dashboard() {
+export default function Dashboard({ comparatorList, toggleComparator }) { 
   const nav = useNavigate();
   const [user, setUser] = useState(null);
 
@@ -103,7 +103,7 @@ export default function Dashboard() {
     await supabase.auth.signOut();
     nav("/");
   };
-
+  
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
@@ -120,6 +120,21 @@ return (
       <div className="max-w-screen-2xl mx-auto flex justify-between items-center">
         <h1 className="text-2xl font-bold text-black">Parcoursup</h1>
         <div className="flex items-center gap-4">
+          
+      
+          <Link
+            to="/comparateur" 
+            className={`px-4 py-2 rounded text-sm flex items-center gap-2 transition-colors ${
+              comparatorList.length > 0
+                ? "bg-purple-600 text-white hover:bg-purple-700"
+                : "bg-gray-200 text-gray-700 cursor-not-allowed"
+            }`}
+            style={{ pointerEvents: comparatorList.length === 0 ? 'none' : 'auto' }}
+          >
+            <BarChart className="w-4 h-4" />
+            Comparer ({comparatorList.length})
+          </Link>
+          
           <span className="text-sm text-gray-700">{user?.email}</span>
           <Link
             to="/profil"
@@ -138,6 +153,7 @@ return (
       </div>
     </header>
 
+  
     <div className="py-10 px-6 bg-purple-50 ml-5 mr-5 mt-5">
       <div className="max-w-screen-2xl mx-auto">
         <h2 className="text-xl font-bold text-black mb-8 text-center">
@@ -270,7 +286,12 @@ return (
 
         <div className="space-y-4">
           {filteredData.map((item) => (
-            <FormationCard key={item.recordid} data={item} />
+            <FormationCard 
+              key={item.recordid} 
+              data={item} 
+              onToggleCompare={toggleComparator} 
+              isCompared={comparatorList.some(comp => comp.recordid === item.recordid)} 
+            />
           ))}
         </div>
       </main>
@@ -282,21 +303,22 @@ return (
   </div>
 );
 }
-const FormationCard = ({ data }) => {
+
+const FormationCard = ({ data, onToggleCompare, isCompared }) => { 
   const [similar, setSimilar] = useState(false);
   const f = data.fields;
 
   return (
     <div className="border border-b-blue-900 border-gray-300 hover:border-blue-900 p-5 bg-white">
-     <span
-  className="text-xs font-bold px-3 py-1 rounded-lg"
-  style={{
-    backgroundColor: "#C6FFF4",
-    color: "#2C615B",
-  }}
->
-  {f.contrat_etab || "PUBLIC"}
-</span>
+      <span
+        className="text-xs font-bold px-3 py-1 rounded-lg"
+        style={{
+          backgroundColor: "#C6FFF4",
+          color: "#2C615B",
+        }}
+      >
+        {f.contrat_etab || "PUBLIC"}
+      </span>
 
       <h3 className="text-lg font-bold text-gray-900 mt-3">
         {f.lib_for_voe_ins}
@@ -309,14 +331,19 @@ const FormationCard = ({ data }) => {
       <p className="text-sm text-gray-600 mt-1">{f.fili}</p>
 
       <Link
-  to={`/formation/${data.recordid}`}
-  className="px-4 py-2 bg-blue-900 text-white text-sm hover:bg-blue-700 inline-block"
->
-  Voir la formation
-</Link>
+        to={`/formation/${data.recordid}`}
+        className="px-4 py-2 bg-blue-900 text-white text-sm hover:bg-blue-700 inline-block"
+      >
+        Voir la formation
+      </Link>
 
+   
       <label className="flex items-center gap-2 mt-3 text-sm text-gray-800">
-        <input type="checkbox" />
+        <input 
+          type="checkbox" 
+          checked={isCompared} 
+          onChange={() => onToggleCompare(data)} 
+        />
         Ajouter au comparateur
       </label>
 
