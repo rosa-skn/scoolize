@@ -4,6 +4,8 @@ import { extraireNotesDepuisPDF } from "../utils/extractNotes";
 import { Link } from "react-router-dom";
 import { fetchParcoursupData } from "../services/parcoursupAPI";
 import { FileText, MapPin, Clock, CheckCircle, XCircle } from "lucide-react";
+import Tesseract from 'tesseract.js';
+
 
 export default function Profil() {
   const [chargement, setChargement] = useState(true);
@@ -14,7 +16,7 @@ export default function Profil() {
   const [prenom, setPrenom] = useState("");
   const [nom, setNom] = useState("");
   const [dateNaissance, setDateNaissance] = useState("");
-  const [telephone, setTelephone] = useState("");
+  const [ine, setIne] = useState("");
   const [adresse, setAdresse] = useState("");
   const [ville, setVille] = useState("");
   const [codePostal, setCodePostal] = useState("");
@@ -69,7 +71,7 @@ export default function Profil() {
         setPrenom(data.prenom || "");
         setNom(data.nom || "");
         setDateNaissance(data.date_naissance || "");
-        setTelephone(data.telephone || "");
+        setIne(data.ine || "");
         setAdresse(data.adresse || "");
         setVille(data.ville || "");
         setCodePostal(data.code_postal || "");
@@ -124,24 +126,41 @@ export default function Profil() {
       setAnalyseEnCours(true);
 
       let notesExtraites = {};
+      let infoPersonnelle = {};
 
       try {
-        notesExtraites = await extraireNotesDepuisPDF(bulletin);
+        alert('Analyse du bulletin en cours... Cela peut prendre 10-30 secondes.');
+        const result = await extraireNotesDepuisPDF(bulletin);
+        notesExtraites = result.grades;
+        infoPersonnelle = result.personalInfo;
+        
+        console.log('Extracted info:', infoPersonnelle);
+        
+        const hasGrades = Object.values(notesExtraites).some(grade => grade !== "");
+        
+        if (!hasGrades) {
+          alert('Aucune note détectée. Veuillez les entrer manuellement.');
+        } else {
+          alert('Notes extraites avec succès! Vérifiez et corrigez si nécessaire.');
+        }
+
+        if (infoPersonnelle.prenom) {
+          setPrenom(infoPersonnelle.prenom);
+        }
+        if (infoPersonnelle.nom) {
+          setNom(infoPersonnelle.nom);
+        }
+        if (infoPersonnelle.dateNaissance) {
+          setDateNaissance(infoPersonnelle.dateNaissance);
+        }
+        if (infoPersonnelle.ine) {
+          setIne(infoPersonnelle.ine);
+        }
+
       } catch (pdfError) {
-        notesExtraites = {
-          mathematiques: "",
-          physique: "",
-          chimie: "",
-          svt: "",
-          francais: "",
-          anglais: "",
-          histoire: "",
-          geographie: "",
-          philosophie: "",
-          sport: "",
-          ses: "",
-          si: ""
-        };
+        console.error('Erreur OCR:', pdfError);
+        alert('Erreur lors de l\'analyse. Veuillez entrer vos notes manuellement.');
+        notesExtraites = getEmptyGrades();
       }
 
       setNotes(notesExtraites);
@@ -155,7 +174,10 @@ export default function Profil() {
           upsert: false
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Storage upload error:', error);
+        throw error;
+      }
 
       const { data: { publicUrl } } = supabase.storage
         .from("bulletins-scolaires")
@@ -169,6 +191,8 @@ export default function Profil() {
       setBulletin(null);
     } catch (error) {
       console.error("Erreur détaillée:", error);
+      console.error("Error message:", error.message);
+      console.error("Error response:", error.response);
       alert("Erreur: " + (error.message || "Impossible de téléverser le bulletin"));
     } finally {
       setTelechargement(false);
@@ -176,7 +200,31 @@ export default function Profil() {
     }
   }
 
-  async function sauvegarderProfilAvecNotes(notesExtraites, url) {
+  function getEmptyGrades() {
+    return {
+      mathematiques: "",
+      physique: "",
+      chimie: "",
+      svt: "",
+      francais: "",
+      anglais: "",
+      histoire: "",
+      geographie: "",
+      philosophie: "",
+      sport: "",
+      ses: "",
+      si: ""
+    };
+  }
+
+async function sauvegarderProfilAvecNotes(notesExtraites, url) {
+    const notesFormatted = {};
+    Object.entries(notesExtraites).forEach(([key, value]) => {
+      notesFormatted[key] = value === "" ? null : parseFloat(value) || null;
+    });
+
+    console.log('Saving profile with notes:', notesFormatted);
+
     const { error } = await supabase
       .from("profils_etudiants")
       .upsert({
@@ -184,15 +232,18 @@ export default function Profil() {
         prenom,
         nom,
         date_naissance: dateNaissance && dateNaissance.trim() ? dateNaissance : null,
-        telephone,
+        ine,
         adresse,
         ville,
         code_postal: codePostal,
-        notes: notesExtraites,
+        notes: notesFormatted,
         url_bulletin: url
       });
 
-    if (error) throw error;
+    if (error) {
+      console.error('Upsert error:', error);
+      throw error;
+    }
   }
 
   async function sauvegarderProfil() {
@@ -203,8 +254,10 @@ export default function Profil() {
 
       const notesFormatted = {};
       Object.entries(notes).forEach(([key, value]) => {
-        notesFormatted[key] = value === "" ? null : parseFloat(value) || 0;
+        notesFormatted[key] = value === "" ? null : parseFloat(value) || null;
       });
+
+      console.log('Saving profile with notes:', notesFormatted);
 
       const { error } = await supabase
         .from("profils_etudiants")
@@ -213,7 +266,7 @@ export default function Profil() {
           prenom: prenom || "",
           nom: nom || "",
           date_naissance: dateNaissance && dateNaissance.trim() ? dateNaissance : null,
-          telephone: telephone || "",
+          ine: ine || "",
           adresse: adresse || "",
           ville: ville || "",
           code_postal: codePostal || "",
@@ -344,8 +397,8 @@ export default function Profil() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Téléphone</label>
-                <input type="tel" value={telephone} onChange={(e) => setTelephone(e.target.value)} className="w-full border rounded px-3 py-2" placeholder="+33 6 12 34 56 78" />
+                <label className="block text-sm font-medium mb-1">INE</label>
+                <input type="text" value={ine} onChange={(e) => setIne(e.target.value)} className="w-full border rounded px-3 py-2" placeholder="000000000AA" />
               </div>
 
               <div>
@@ -401,7 +454,16 @@ export default function Profil() {
               {Object.entries(notes).map(([matiere, note]) => (
                 <div key={matiere}>
                   <label className="block text-xs font-medium mb-1 capitalize">{matiere.replace("_", " ")}</label>
-                  <input type="number" min="0" max="20" step="0.1" value={note} onChange={(e) => setNotes({ ...notes, [matiere]: e.target.value })} className="w-full border rounded px-2 py-1 text-sm" placeholder="0-20" />
+  <input 
+  type="number" 
+  min="0" 
+  max="20" 
+  step="0.1" 
+  value={note || ""}  // ✅ FIX: Use empty string if null/undefined
+  onChange={(e) => setNotes({ ...notes, [matiere]: e.target.value })} 
+  className="w-full border rounded px-2 py-1 text-sm" 
+  placeholder="0-20" 
+/>
                 </div>
               ))}
             </div>

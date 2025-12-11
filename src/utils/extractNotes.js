@@ -1,89 +1,262 @@
 import Tesseract from 'tesseract.js';
-import { createWorker } from 'tesseract.js';
-
-// Convertir PDF en image (utiliser pdf.js)
 import * as pdfjsLib from 'pdfjs-dist';
 
-// Configurer le worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.min.mjs',
+  import.meta.url
+).toString();
 
-export async function extraireNotesDepuisPDF(fichierPDF) {
+export async function extraireNotesDepuisPDF(file) {
   try {
-    console.log('📄 Analyse du bulletin scolaire...');
+    console.log('Starting bulletin analysis...');
+    console.log('File:', file.name, file.type, file.size);
     
-    // Convertir le PDF en image
-    const arrayBuffer = await fichierPDF.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-    const page = await pdf.getPage(1); // Première page
+    if (!file.type.includes('pdf')) {
+      throw new Error('Le fichier doit être un PDF');
+    }
     
-    const viewport = page.getViewport({ scale: 2.0 });
-    const canvas = document.createElement('canvas');
-    const context = canvas.getContext('2d');
-    canvas.height = viewport.height;
-    canvas.width = viewport.width;
+    console.log('Converting PDF to image...');
+    const imageDataUrl = await convertPdfToImage(file);
     
-    await page.render({ canvasContext: context, viewport }).promise;
+    console.log('Running OCR...');
+    const result = await Tesseract.recognize(imageDataUrl, 'fra', {
+      logger: (m) => {
+        if (m.status === 'recognizing text') {
+          console.log(`OCR Progress: ${(m.progress * 100).toFixed(0)}%`);
+        }
+      },
+    });
+
+    const text = result.data.text;
+    console.log('Full extracted text:');
+    console.log(text);
+    console.log('Text length:', text.length);
+
+    if (!text || text.trim().length === 0) {
+      console.warn('No text extracted from PDF');
+      return { grades: getEmptyGrades(), personalInfo: getEmptyPersonalInfo() };
+    }
+
+    const grades = parseGradesFromText(text);
+    const personalInfo = parsePersonalInfoFromText(text);
     
-    // Extraire le texte avec OCR
-    const worker = await createWorker('fra'); // Français
-    const { data: { text } } = await worker.recognize(canvas);
-    await worker.terminate();
-    
-    console.log('📝 Texte extrait:', text);
-    
-    // Analyser les notes
-    const notes = analyserTexteNotes(text);
-    
-    return notes;
+    console.log('Final parsed grades:', grades);
+    console.log('Final parsed personal info:', personalInfo);
+
+    const gradesFound = Object.values(grades).filter(g => g !== "").length;
+    console.log(`Grades found: ${gradesFound}/12 subjects`);
+
+    return { grades, personalInfo };
   } catch (error) {
-    console.error('❌ Erreur extraction:', error);
+    console.error('OCR Error:', error);
     throw error;
   }
 }
 
-function analyserTexteNotes(texte) {
-  const notes = {
-    mathematiques: null,
-    physique: null,
-    chimie: null,
-    svt: null,
-    francais: null,
-    anglais: null,
-    histoire: null,
-    geographie: null,
-    philosophie: null,
-    sport: null,
-    ses: null,
-    si: null
+async function convertPdfToImage(file) {
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    
+    const loadingTask = pdfjsLib.getDocument({
+      data: arrayBuffer,
+      cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/cmaps/',
+      cMapPacked: true,
+    });
+    
+    const pdf = await loadingTask.promise;
+    console.log(`PDF loaded: ${pdf.numPages} pages`);
+    
+    const page = await pdf.getPage(1);
+    
+    const viewport = page.getViewport({ scale: 2.0 });
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    
+    canvas.height = viewport.height;
+    canvas.width = viewport.width;
+
+    await page.render({
+      canvasContext: context,
+      viewport: viewport,
+    }).promise;
+
+    console.log('PDF converted to image');
+    return canvas.toDataURL('image/png');
+  } catch (error) {
+    console.error('PDF conversion error:', error);
+    throw new Error(`Impossible de lire le PDF: ${error.message}`);
+  }
+}
+
+function getEmptyGrades() {
+  return {
+    mathematiques: "",
+    physique: "",
+    chimie: "",
+    svt: "",
+    francais: "",
+    anglais: "",
+    histoire: "",
+    geographie: "",
+    philosophie: "",
+    sport: "",
+    ses: "",
+    si: ""
   };
-  
-  // Patterns pour détecter les matières et leurs notes
-  const patterns = {
-    mathematiques: /math[ée]matiques?\s*:?\s*(\d{1,2}[.,]?\d{0,2})/i,
-    physique: /physique(?:-chimie)?\s*:?\s*(\d{1,2}[.,]?\d{0,2})/i,
-    chimie: /chimie\s*:?\s*(\d{1,2}[.,]?\d{0,2})/i,
-    svt: /(?:svt|sciences?\s+vie|biologie)\s*:?\s*(\d{1,2}[.,]?\d{0,2})/i,
-    francais: /fran[cç]ais\s*:?\s*(\d{1,2}[.,]?\d{0,2})/i,
-    anglais: /anglais\s*:?\s*(\d{1,2}[.,]?\d{0,2})/i,
-    histoire: /histoire(?:-g[ée]o)?\s*:?\s*(\d{1,2}[.,]?\d{0,2})/i,
-    geographie: /g[ée]ographie\s*:?\s*(\d{1,2}[.,]?\d{0,2})/i,
-    philosophie: /philo(?:sophie)?\s*:?\s*(\d{1,2}[.,]?\d{0,2})/i,
-    sport: /(?:eps|sport|[ée]ducation\s+physique)\s*:?\s*(\d{1,2}[.,]?\d{0,2})/i,
-    ses: /(?:ses|[ée]co(?:nomie)?)\s*:?\s*(\d{1,2}[.,]?\d{0,2})/i,
-    si: /(?:si|sciences?\s+ing[ée]nieur)\s*:?\s*(\d{1,2}[.,]?\d{0,2})/i
+}
+
+function getEmptyPersonalInfo() {
+  return {
+    prenom: "",
+    nom: "",
+    ine: "",
+    dateNaissance: ""
   };
+}
+
+function parsePersonalInfoFromText(text) {
+  const personalInfo = getEmptyPersonalInfo();
+  const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
   
-  // Extraire chaque note
-  for (const [matiere, pattern] of Object.entries(patterns)) {
-    const match = texte.match(pattern);
-    if (match && match[1]) {
-      let note = parseFloat(match[1].replace(',', '.'));
-      // S'assurer que la note est entre 0 et 20
-      if (note >= 0 && note <= 20) {
-        notes[matiere] = note;
+  console.log('Extracting personal information...');
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    if (/^INE\s*:/i.test(line)) {
+      console.log(`Found INE line: "${line}"`);
+      const ineMatch = line.match(/INE\s*:\s*(\w+)/i);
+      if (ineMatch) {
+        personalInfo.ine = ineMatch[1];
+        console.log(`Extracted INE: ${personalInfo.ine}`);
+      }
+    }
+
+    if (/Née?\s+le/i.test(line)) {
+      console.log(`Found birth line: "${line}"`);
+      const dateMatch = line.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+      if (dateMatch) {
+        const [, day, month, year] = dateMatch;
+        personalInfo.dateNaissance = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+        console.log(`Extracted date: ${personalInfo.dateNaissance}`);
+      }
+    }
+
+    const nameMatch = line.match(/^([A-Z][A-Za-z\s]+)\s+([A-Z][a-z]+)$/);
+    if (nameMatch && !personalInfo.nom && !line.includes('INE') && !line.includes('/')) {
+      const fullName = line;
+      const parts = fullName.trim().split(/\s+/);
+      
+      if (parts.length >= 2) {
+        const lastWord = parts[parts.length - 1];
+        const restOfName = parts.slice(0, -1).join(' ');
+        
+        personalInfo.nom = lastWord;
+        personalInfo.prenom = restOfName;
+        console.log(`Extracted name: Prénom="${personalInfo.prenom}", Nom="${personalInfo.nom}"`);
       }
     }
   }
+
+  return personalInfo;
+}
+
+function parseGradesFromText(text) {
+  const grades = getEmptyGrades();
+  const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
   
-  return notes;
+  console.log(`Processing ${lines.length} lines for grades`);
+
+  const subjectPatterns = {
+    mathematiques: [/MATH/i, /MATHEMAT/i],
+    physique: [/PHYSIQUE/i],
+    chimie: [/CHIMIE/i],
+    francais: [/FRANCAIS/i, /FRAN[CCS]AIS/i],
+    anglais: [/ANGLAIS/i, /LV1/i],
+    histoire: [/HISTOIRE/i],
+    geographie: [/GEOGRAPHIE/i, /GEOG/i],
+    philosophie: [/PHILOSOPHIE/i, /PHILO/i],
+    svt: [/SVT/i, /SCIENCES.*VIE/i],
+    sport: [/SPORT/i, /EPS/i, /EDUCATION.*PHYSIQUE/i],
+    ses: [/\bSES\b/i, /SCIENCES.*ECONOMIQUE/i],
+    si: [/SCIENCES.*ING/i, /\bSI\b/i]
+  };
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    console.log(`[${i}] "${line}"`);
+
+    for (const [subject, patterns] of Object.entries(subjectPatterns)) {
+      for (const pattern of patterns) {
+        if (pattern.test(line)) {
+          console.log(`  MATCH: "${subject}"`);
+          const grade = extractGradeFromTableLine(line, subject);
+          if (grade) {
+            grades[subject] = grade;
+            console.log(`  SUCCESS: ${subject} = ${grade}`);
+          }
+          break;
+        }
+      }
+    }
+  }
+
+  return grades;
+}
+
+function extractGradeFromTableLine(line, subject) {
+  console.log(`  Extracting grade from table line: "${line}"`);
+  
+  const allNumbers = line.match(/[\d]{1,2}[.,][\d]{1,2}/g) || [];
+  console.log(`  All numbers found: ${allNumbers.join(', ')}`);
+
+  if (allNumbers.length === 0) {
+    console.log(`  No numbers found`);
+    return null;
+  }
+
+  const coefficient = allNumbers[0];
+  console.log(`  Suspected coefficient: ${coefficient}`);
+
+  const validGrades = allNumbers.filter(num => {
+    const val = parseFloat(num.replace(',', '.'));
+    return val >= 0 && val <= 20;
+  });
+
+  console.log(`  Valid grades (0-20): ${validGrades.join(', ')}`);
+
+  if (validGrades.length === 0) {
+    console.log(`  No valid grades found`);
+    return null;
+  }
+
+  if (validGrades.length === 1) {
+    console.log(`  Only one valid grade, using it`);
+    return parseFloat(validGrades[0].replace(',', '.')).toFixed(2);
+  }
+
+  let selectedGrade = null;
+
+  if (validGrades.length >= 2) {
+    const coef = parseFloat(coefficient.replace(',', '.'));
+    
+    const gradesAfterCoefficient = validGrades.filter(g => {
+      const val = parseFloat(g.replace(',', '.'));
+      return val !== coef;
+    });
+
+    if (gradesAfterCoefficient.length > 0) {
+      selectedGrade = gradesAfterCoefficient[0];
+      console.log(`  Using first grade after coefficient: ${selectedGrade}`);
+    } else {
+      selectedGrade = validGrades[1];
+      console.log(`  Using second valid grade: ${selectedGrade}`);
+    }
+  }
+
+  if (selectedGrade) {
+    return parseFloat(selectedGrade.replace(',', '.')).toFixed(2);
+  }
+
+  return null;
 }

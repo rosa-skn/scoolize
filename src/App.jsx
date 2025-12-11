@@ -9,6 +9,8 @@ import Formation from "./pages/Formation";
 import Profil from "./pages/Profil";
 import Comparator from "./pages/Comparator";
 import FormationDetail from "./components/FormationDetails"; 
+import Admin from "./components/Admin";
+
 
 function App() {
  
@@ -67,7 +69,8 @@ function App() {
         <Route path="/search" element={<Search />} />
         <Route path="/formation/:id" element={<Formation />} />
         <Route path="/profil" element={<Profil />} />
-        <Route path="/formation/:id" element={<FormationDetail />} />
+        <Route path="/formation/:id/details" element={<FormationDetail />} />
+        <Route path="/admin" element={<Admin />} />
       </Routes>
     </BrowserRouter>
   );
