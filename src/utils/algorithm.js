@@ -15,29 +15,24 @@ export function calculerScore(notesEtudiant, formation, rangVoeu = 1, estBoursie
   
   const moyennePonderee = sommeCoefficients > 0 ? sommeNotes / sommeCoefficients : 0;
   
-  // 2️⃣ Vérifier la note minimale
   if (moyennePonderee < (formation.note_minimale || 10)) {
     return { score: 0, admissible: false, raison: "Note insuffisante" };
   }
   
-  // 3️⃣ Calculer le score de base (sur 1000 points)
-  let score = moyennePonderee * 50; // Max 1000 points si 20/20
+  let score = moyennePonderee * 50;
   
-  // 4️⃣ Bonus selon le rang du vœu (plus c'est haut dans la liste, mieux c'est)
-  const bonusRang = Math.max(0, (11 - rangVoeu) * 10); // Max +100 points pour vœu n°1
+  const bonusRang = Math.max(0, (11 - rangVoeu) * 10);
   score += bonusRang;
   
-  // 5️⃣ Bonus boursier (+50 points)
   if (estBoursier) {
     score += 50;
   }
   
-  // 6️⃣ Ajustement selon la sélectivité
   const selectivite = formation.type_selectivite || 'normale';
   if (selectivite === 'elite' && moyennePonderee < 14) {
-    score *= 0.7; // Malus pour les formations d'élite
+    score *= 0.7;
   } else if (selectivite === 'normale') {
-    score *= 1.1; // Bonus pour les formations non-sélectives
+    score *= 1.1;
   }
   
   return {
@@ -49,11 +44,6 @@ export function calculerScore(notesEtudiant, formation, rangVoeu = 1, estBoursie
   };
 }
 
-/**
- * 🏆 CLASSEMENT DES CANDIDATS
- * 
- * Classe tous les candidats pour une formation donnée
- */
 export function classerCandidats(candidatures, formation) {
   return candidatures
     .map(candidature => ({
@@ -69,11 +59,6 @@ export function classerCandidats(candidatures, formation) {
     .sort((a, b) => b.resultat.score - a.resultat.score);
 }
 
-/**
- * 🎯 ATTRIBUTION DES PLACES
- * 
- * Détermine qui est accepté selon la capacité d'accueil
- */
 export function attribuerPlaces(candidatsClasses, formation) {
   const capaciteTotale = formation.capacite_totale || 0;
   const capaciteBoursiers = formation.capacite_boursiers || 0;
@@ -81,10 +66,8 @@ export function attribuerPlaces(candidatsClasses, formation) {
   const boursiers = candidatsClasses.filter(c => c.est_boursier);
   const nonBoursiers = candidatsClasses.filter(c => !c.est_boursier);
   
-  // 1️⃣ Placer les boursiers d'abord (quota réservé)
   const boursiersAcceptes = boursiers.slice(0, capaciteBoursiers);
   
-  // 2️⃣ Places restantes pour tous
   const placesRestantes = capaciteTotale - boursiersAcceptes.length;
   const autresCandidats = [
     ...boursiers.slice(capaciteBoursiers),
@@ -93,7 +76,6 @@ export function attribuerPlaces(candidatsClasses, formation) {
   
   const autresAcceptes = autresCandidats.slice(0, placesRestantes);
   
-  // 3️⃣ Marquer les statuts
   const acceptes = [...boursiersAcceptes, ...autresAcceptes].map(c => c.etudiant_id);
   
   return candidatsClasses.map(candidat => ({

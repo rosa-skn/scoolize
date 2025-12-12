@@ -6,7 +6,6 @@ import { fetchParcoursupData } from "../services/parcoursupAPI";
 import { FileText, MapPin, Clock, CheckCircle, XCircle } from "lucide-react";
 import Tesseract from 'tesseract.js';
 
-
 export default function Profil() {
   const [chargement, setChargement] = useState(true);
   const [telechargement, setTelechargement] = useState(false);
@@ -38,6 +37,8 @@ export default function Profil() {
   const [bulletin, setBulletin] = useState(null);
   const [urlBulletin, setUrlBulletin] = useState("");
   const [candidatures, setCandidatures] = useState([]);
+  const [motivationLetter, setMotivationLetter] = useState(null);
+  const [urlMotivationLetter, setUrlMotivationLetter] = useState("");
 
   useEffect(() => {
     chargerProfil();
@@ -77,6 +78,7 @@ export default function Profil() {
         setCodePostal(data.code_postal || "");
         setNotes(data.notes || {});
         setUrlBulletin(data.url_bulletin || "");
+        setUrlMotivationLetter(data.url_motivation_letter || "");
       }
 
       await chargerCandidatures(user.id);
@@ -217,7 +219,7 @@ export default function Profil() {
     };
   }
 
-async function sauvegarderProfilAvecNotes(notesExtraites, url) {
+  async function sauvegarderProfilAvecNotes(notesExtraites, url) {
     const notesFormatted = {};
     Object.entries(notesExtraites).forEach(([key, value]) => {
       notesFormatted[key] = value === "" ? null : parseFloat(value) || null;
@@ -271,7 +273,8 @@ async function sauvegarderProfilAvecNotes(notesExtraites, url) {
           ville: ville || "",
           code_postal: codePostal || "",
           notes: notesFormatted,
-          url_bulletin: urlBulletin || ""
+          url_bulletin: urlBulletin || "",
+          url_motivation_letter: urlMotivationLetter || ""
         });
 
       if (error) {
@@ -308,6 +311,51 @@ async function sauvegarderProfilAvecNotes(notesExtraites, url) {
             <Clock className="w-4 h-4" /> En attente
           </span>
         );
+    }
+  }
+
+  async function televerserMotivationLetter() {
+    if (!motivationLetter || !user) return;
+
+    try {
+      setTelechargement(true);
+
+      const nomFichier = `${user.id}/motivation_${Date.now()}_${motivationLetter.name}`;
+
+      const { error } = await supabase.storage
+        .from("motivation-letters")
+        .upload(nomFichier, motivationLetter, {
+          cacheControl: "3600",
+          upsert: false
+        });
+
+      if (error) {
+        console.error('Storage upload error:', error);
+        throw error;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from("motivation-letters")
+        .getPublicUrl(nomFichier);
+
+      setUrlMotivationLetter(publicUrl);
+
+      const { error: updateError } = await supabase
+        .from("profils_etudiants")
+        .update({
+          url_motivation_letter: publicUrl
+        })
+        .eq("id", user.id);
+
+      if (updateError) throw updateError;
+
+      alert("Lettre de motivation téléversée avec succès!");
+      setMotivationLetter(null);
+    } catch (error) {
+      console.error("Erreur détaillée:", error);
+      alert("Erreur: " + (error.message || "Impossible de téléverser la lettre"));
+    } finally {
+      setTelechargement(false);
     }
   }
 
@@ -419,7 +467,7 @@ async function sauvegarderProfilAvecNotes(notesExtraites, url) {
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white rounded-lg shadow p-6 mb-6">
             <h2 className="text-xl font-bold mb-4">Bulletin scolaire (PDF)</h2>
 
             {analyseEnCours && (
@@ -438,11 +486,30 @@ async function sauvegarderProfilAvecNotes(notesExtraites, url) {
 
             <div className="flex items-center gap-4">
               <input type="file" accept="application/pdf" onChange={(e) => setBulletin(e.target.files[0])} className="border p-2 rounded flex-1" />
-              <button onClick={televerserBulletin} disabled={telechargement || !bulletin} className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400">
+              <button onClick={televerserBulletin} disabled={telechargement || !bulletin} className="px-6 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 disabled:bg-gray-400">
                 {telechargement ? "Envoi..." : "Analyser"}
               </button>
             </div>
             <p className="text-sm text-gray-500 mt-2">Le PDF sera analysé automatiquement pour extraire vos notes</p>
+          </div>
+
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-xl font-bold mb-4">Lettre de motivation</h2>
+
+            {urlMotivationLetter && (
+              <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded">
+                <p className="text-sm text-green-700">Lettre de motivation téléversée</p>
+                <a href={urlMotivationLetter} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm">Voir ou télécharger le document</a>
+              </div>
+            )}
+
+            <div className="flex items-center gap-4">
+              <input type="file" accept=".pdf,.doc,.docx" onChange={(e) => setMotivationLetter(e.target.files[0])} className="border p-2 rounded flex-1" />
+              <button onClick={televerserMotivationLetter} disabled={telechargement || !motivationLetter} className="px-6 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 disabled:bg-gray-400">
+                {telechargement ? "Envoi..." : "Téléverser"}
+              </button>
+            </div>
+            <p className="text-sm text-gray-500 mt-2">Formats acceptés: PDF, DOC, DOCX</p>
           </div>
         </div>
 
@@ -454,16 +521,16 @@ async function sauvegarderProfilAvecNotes(notesExtraites, url) {
               {Object.entries(notes).map(([matiere, note]) => (
                 <div key={matiere}>
                   <label className="block text-xs font-medium mb-1 capitalize">{matiere.replace("_", " ")}</label>
-  <input 
-  type="number" 
-  min="0" 
-  max="20" 
-  step="0.1" 
-  value={note || ""}  // ✅ FIX: Use empty string if null/undefined
-  onChange={(e) => setNotes({ ...notes, [matiere]: e.target.value })} 
-  className="w-full border rounded px-2 py-1 text-sm" 
-  placeholder="0-20" 
-/>
+                  <input 
+                    type="number" 
+                    min="0" 
+                    max="20" 
+                    step="0.1" 
+                    value={note || ""}
+                    onChange={(e) => setNotes({ ...notes, [matiere]: e.target.value })} 
+                    className="w-full border rounded px-2 py-1 text-sm" 
+                    placeholder="0-20" 
+                  />
                 </div>
               ))}
             </div>
